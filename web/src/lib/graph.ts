@@ -24,13 +24,15 @@ function store() {
 
 // extension bridge: local graph lives in the extension
 type Chrome = { runtime?: { sendMessage?: (id: string, msg: unknown, cb: (r: unknown) => void) => void; lastError?: unknown } }
-function ext<T>(msg: { type: 'getGraph' } | { type: 'saveNode'; node: Concept; edges?: Edge[] }): Promise<T | null> {
+// ponytail: ext saveNode takes no edges; mirror edges when ext api grows
+function ext<T>(msg: { type: 'getGraph' } | { type: 'saveNode'; name: string; summary?: string; status?: Status }): Promise<T | null> {
   const id = process.env.NEXT_PUBLIC_EXTENSION_ID
   const c = (globalThis as { chrome?: Chrome }).chrome
   if (!id || !c?.runtime?.sendMessage) return Promise.resolve(null)
   return new Promise((res) => {
     try {
-      c.runtime!.sendMessage!(id, msg, (r) => res(c.runtime?.lastError ? null : ((r as T) ?? null)))
+      // ext replies {data} | {error}
+      c.runtime!.sendMessage!(id, msg, (r) => res(c.runtime?.lastError ? null : ((r as { data?: T })?.data ?? null)))
     } catch {
       res(null)
     }
@@ -86,7 +88,7 @@ async function load(): Promise<Graph> {
 }
 
 async function persist(nodes: Concept[], edges: Edge[]) {
-  for (const n of nodes) ext({ type: 'saveNode', node: n, edges: edges.filter((e) => e.to === n.slug) })
+  for (const n of nodes) ext({ type: 'saveNode', name: n.name, summary: n.summary, status: n.status })
   const s = store()
   const u = await uid().catch(() => null)
   if (!s || !u) return
