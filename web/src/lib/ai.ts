@@ -2,8 +2,8 @@ import { getAI, getGenerativeModel, GoogleAIBackend, InferenceMode, type Generat
 import { firebaseApp } from './firebase'
 import { demoExplain, demoIssue, slug } from './demo'
 
-// single cloud model. https://firebase.google.com/docs/ai-logic/models
-export const MODEL = 'gemini-3.8-flash'
+// single cloud model, same as extension. https://firebase.google.com/docs/ai-logic/models
+export const MODEL = 'gemini-3.5-flash-lite'
 
 export type Prereq = { name: string; why: string }
 export type Explain = { term: string; short: string; explanation: string; prerequisites: Prereq[]; example: string }

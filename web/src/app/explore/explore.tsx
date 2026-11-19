@@ -9,7 +9,8 @@ import { deepDive, explain, type Deep, type Explain, type Source } from '@/lib/a
 import { learn, setStatus, slug, statusOf, useGraph, type Edge } from '@/lib/graph'
 
 export default function Explore() {
-  const term = (useSearchParams().get('concept') || 'closures').trim()
+  // extension sends slugs → humanize
+  const term = (useSearchParams().get('concept') || 'closures').trim().replace(/-+/g, ' ')
   // new concept → fresh map
   return <ConceptMap key={slug(term)} term={term} />
 }
@@ -36,6 +37,7 @@ function ConceptMap({ term }: { term: string }) {
     explain(name)
       .then((r) => {
         setEx((e) => ({ ...e, [id]: r }))
+        if (r.data.term) setNames((n) => ({ ...n, [id]: r.data.term }))
         learn(name, r.data.short, r.data.prerequisites)
         return r
       })
