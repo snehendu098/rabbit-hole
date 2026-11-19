@@ -22,7 +22,7 @@ const CSS = `
 .chip,.card{position:absolute;background:#111;color:#e8e4dc;border:1px solid #292929;border-radius:0}
 .chip{width:22px;height:22px;padding:0;font:600 12px/1 ${MONO};cursor:pointer;transition:color .15s,border-color .15s}
 .chip:hover,.btn:hover{border-color:#8fb0f5;color:#8fb0f5}
-.card{width:320px;max-height:min(440px,calc(100vh - 16px));overflow:auto;padding:14px;font:14px/1.5 Geist,ui-sans-serif,system-ui,-apple-system,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+.card{width:320px;overflow:auto;padding:14px;font:14px/1.5 Geist,ui-sans-serif,system-ui,-apple-system,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.45)}
 .label,.badge,.btn{font:500 11px/1 ${MONO};text-transform:uppercase;letter-spacing:.08em}
 .label{color:#9a958d}
 .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
@@ -30,7 +30,7 @@ const CSS = `
 .badge.live{color:#8fb0f5;border-color:#8fb0f5}
 .term{font-size:16px;font-weight:600;margin-bottom:6px}
 .short{margin-bottom:6px}
-.muted{color:#9a958d;font-size:13px}
+.muted{color:#9a958d;font-size:13px;margin-bottom:12px}
 ul{list-style:none;padding:0;margin:8px 0 14px}
 li{display:grid;grid-template-columns:8px 1fr;gap:2px 10px;padding:6px 0;border-top:1px solid #292929}
 li small{grid-column:2;color:#9a958d;font-size:12px;line-height:1.4}
@@ -71,11 +71,13 @@ function close() {
   seq++
 }
 
-// below anchor, flip above if no room
+// below anchor if fits, else roomier side; cap height so anchor stays visible
 function place(r: DOMRect) {
   card.style.left = `${Math.max(8, Math.min(r.left, innerWidth - 328))}px`
-  const below = r.bottom + 8
-  card.style.top = `${below + card.offsetHeight > innerHeight - 8 ? Math.max(8, r.top - 8 - card.offsetHeight) : below}px`
+  const up = r.top - 16, down = innerHeight - r.bottom - 16
+  const below = down >= card.scrollHeight || down >= up
+  card.style.maxHeight = `${Math.max(120, Math.min(440, below ? down : up))}px`
+  card.style.top = `${below ? r.bottom + 8 : r.top - 8 - card.offsetHeight}px`
 }
 
 const SRC: Record<Source, string> = { ON_DEVICE: 'On-device', PROMPT_API: 'On-device · Prompt API', IN_CLOUD: 'Cloud' }
@@ -138,7 +140,7 @@ document.addEventListener('mouseup', (e) => {
     chipTerm = t
     chipRect = sel.getRangeAt(0).getBoundingClientRect()
     chip.style.left = `${Math.min(chipRect.right + 4, innerWidth - 30)}px`
-    chip.style.top = `${Math.max(4, chipRect.top - 26)}px`
+    chip.style.top = `${chipRect.top >= 30 ? chipRect.top - 26 : chipRect.bottom + 4}px` // above, else below
     chip.hidden = false
     motion(chip)
   })
