@@ -1,0 +1,22 @@
+<!doctype html>
+<meta charset="utf-8" />
+<style>
+  * { box-sizing: border-box; margin: 0 }
+  body { width: 280px; padding: 16px; background: #111; color: #e8e4dc; font: 14px/1.5 Geist, ui-sans-serif, system-ui, -apple-system, sans-serif }
+  .label, button, a { font: 500 11px/1 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace; text-transform: uppercase; letter-spacing: .08em }
+  .label { color: #9a958d }
+  h1 { font-size: 16px; font-weight: 600; margin: 6px 0 14px }
+  .row { display: flex; justify-content: space-between; padding: 8px 0; border-top: 1px solid #292929 }
+  #status.live { color: #8fb0f5 }
+  button, a { display: block; width: 100%; margin-top: 10px; padding: 9px; text-align: center; background: transparent; color: #8fb0f5; border: 1px solid #8fb0f5; border-radius: 0; cursor: pointer; text-decoration: none; transition: opacity .15s }
+  a { color: #e8e4dc; border-color: #292929 }
+  button:disabled { opacity: .5; cursor: default }
+</style>
+<div class="label">Rabbit Hole</div>
+<h1>Learning layer</h1>
+<div class="row"><span class="label">On-device AI</span><span id="status">…</span></div>
+<div class="row"><span class="label">On-device calls</span><span id="onDevice">0</span></div>
+<div class="row"><span class="label">Cloud calls</span><span id="cloud">0</span></div>
+<button id="enable" hidden>Enable on-device AI</button>
+<a id="web" target="_blank">Open web app</a>
+<script type="module" src="/src/popup.ts"></script>
