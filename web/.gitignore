@@ -1,0 +1,21 @@
+# deps
+/node_modules
+.pnp
+.pnp.*
+
+# next
+/.next/
+/out/
+/build
+next-env.d.ts
+*.tsbuildinfo
+
+# misc
+.DS_Store
+*.pem
+*.log
+.firebase
+
+# env (keep example)
+.env*
+!.env.example
