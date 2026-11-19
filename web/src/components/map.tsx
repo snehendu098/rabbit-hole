@@ -102,11 +102,13 @@ function layout(items: MapItem[], links: Edge[]): CNode[] {
   })
 }
 
+const fit = { padding: 0.3, maxZoom: 1.1 }
+
 // refit when node set changes
 function Fit({ sig }: { sig: string }) {
   const { fitView } = useReactFlow()
   useEffect(() => {
-    const t = setTimeout(() => fitView({ padding: 0.3, duration: 700, maxZoom: 1.1 }), 80)
+    const t = setTimeout(() => fitView({ ...fit, duration: 700 }), 80)
     return () => clearTimeout(t)
   }, [sig, fitView])
   return null
@@ -145,11 +147,11 @@ export function Canvas({ items, links, onSelect }: { items: MapItem[]; links: Ed
       nodesConnectable={false}
       minZoom={0.2}
       fitView
-      proOptions={{ hideAttribution: true }}
+      fitViewOptions={fit}
       className="rh-flow"
     >
       <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="rgb(232 228 220 / 0.08)" />
-      <Controls showInteractive={false} position="bottom-right" />
+      <Controls showInteractive={false} position="bottom-right" className="!mb-8" />
       <Fit sig={items.map((i) => i.id).join()} />
     </ReactFlow>
   )

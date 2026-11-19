@@ -156,3 +156,5 @@ body::after {
 @media (prefers-reduced-motion: reduce) {
   .rh-flow .react-flow__node { transition: none; }
 }
+.rh-flow .react-flow__attribution { background: transparent; font-family: var(--font-mono); font-size: 9px; }
+.rh-flow .react-flow__attribution a { color: var(--muted-foreground); }

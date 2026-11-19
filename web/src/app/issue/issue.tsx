@@ -118,7 +118,7 @@ function Breakdown({ url }: { url: string }) {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
         {/* head */}
-        <section className="grid lg:grid-cols-[7fr_5fr]">
+        <section className="grid lg:grid-cols-2">
           <Stagger delay={0.05} className={`flex flex-col gap-8 py-16 md:py-24 ${pad}`}>
             <Item className="flex flex-wrap items-center gap-4">
               <Label>{m[1]} · #{m[2]}</Label>
