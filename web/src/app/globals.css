@@ -137,3 +137,22 @@ body::after {
 @media (prefers-reduced-motion: reduce) {
   .pc-pulse, .pc-blink { animation: none; }
 }
+
+/* react flow in ds style */
+.rh-flow {
+  --xy-background-color: transparent;
+  --xy-edge-stroke: var(--muted-foreground);
+  --xy-controls-button-background-color: var(--card);
+  --xy-controls-button-background-color-hover: var(--muted);
+  --xy-controls-button-color: var(--muted-foreground);
+  --xy-controls-button-color-hover: var(--foreground);
+  --xy-controls-button-border-color: var(--border);
+  --xy-controls-box-shadow: none;
+}
+.rh-flow .react-flow__controls { border: 1px solid var(--border); }
+.rh-flow .react-flow__controls-button svg { fill: currentColor; }
+/* glide on relayout, not while dragging */
+.rh-flow .react-flow__node:not(.dragging) { transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+@media (prefers-reduced-motion: reduce) {
+  .rh-flow .react-flow__node { transition: none; }
+}

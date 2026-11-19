@@ -111,32 +111,46 @@ const fresh = (name: string, summary = ''): Concept => {
   return { slug: slug(name), name, summary, status: 'new', mastery: 0, seenCount: 0, firstSeen: t, lastSeen: t }
 }
 
-/** Personal graph state + writes (extension, firestore, or demo). */
-export function useGraph() {
-  const [g, setG] = useState<Graph | null>(null)
-  useEffect(() => {
-    load().then(setG)
-  }, [])
-
-  /** Record a concept you just read + its prereqs; viewing bumps new → seen. */
-  const learn = (name: string, summary: string, prereqs: { name: string }[]) => {
-    if (!g) return
-    const s = slug(name)
-    const old = g.concepts[s] ?? fresh(name, summary)
-    const main: Concept = { ...old, summary: summary || old.summary, status: old.status === 'new' ? 'seen' : old.status, seenCount: old.seenCount + 1, lastSeen: Date.now() }
-    const pre = prereqs.filter((p) => !g.concepts[slug(p.name)]).map((p) => fresh(p.name))
-    const edges = prereqs.map((p) => ({ from: slug(p.name), to: s })).filter((e) => !g.edges.some((x) => x.from === e.from && x.to === e.to))
-    setG({ ...g, concepts: { ...g.concepts, ...byId([main, ...pre]) }, edges: [...g.edges, ...edges] })
-    persist([main, ...pre], edges)
-  }
-
-  const setStatus = (name: string, status: Status) => {
-    if (!g) return
-    const c = { ...(g.concepts[slug(name)] ?? fresh(name)), status, mastery: status === 'known' ? 0.9 : status === 'seen' ? 0.4 : 0 }
-    setG({ ...g, concepts: { ...g.concepts, [c.slug]: c } })
-    persist([c], [])
-  }
-
-  const status = (name: string): Status => g?.concepts[slug(name)]?.status ?? 'new'
-  return { graph: g, learn, setStatus, status }
+// tiny shared store: one load, all pages see writes
+let mem: Graph | null = null
+let pending: Promise<Graph> | null = null
+const subs = new Set<(g: Graph) => void>()
+const get = () => (mem ? Promise.resolve(mem) : (pending ??= load().then((g) => (mem = g))))
+const put = (g: Graph) => {
+  mem = g
+  subs.forEach((f) => f(g))
 }
+
+/** Record a concept you just read + its prereqs; viewing bumps new → seen. */
+export async function learn(name: string, summary: string, prereqs: { name: string }[]) {
+  const g = await get()
+  const s = slug(name)
+  const old = g.concepts[s] ?? fresh(name, summary)
+  const main: Concept = { ...old, summary: summary || old.summary, status: old.status === 'new' ? 'seen' : old.status, seenCount: old.seenCount + 1, lastSeen: Date.now() }
+  const pre = prereqs.filter((p) => !g.concepts[slug(p.name)]).map((p) => fresh(p.name))
+  const edges = prereqs.map((p) => ({ from: slug(p.name), to: s })).filter((e) => e.from !== s && !g.edges.some((x) => x.from === e.from && x.to === e.to))
+  put({ ...g, concepts: { ...g.concepts, ...byId([main, ...pre]) }, edges: [...g.edges, ...edges] })
+  persist([main, ...pre], edges)
+}
+
+export async function setStatus(name: string, status: Status) {
+  const g = await get()
+  const c = { ...(g.concepts[slug(name)] ?? fresh(name)), status, mastery: status === 'known' ? 0.9 : status === 'seen' ? 0.4 : 0 }
+  put({ ...g, concepts: { ...g.concepts, [c.slug]: c } })
+  persist([c], [])
+}
+
+/** Personal graph (extension, firestore, or demo). null while loading. */
+export function useGraph() {
+  const [g, setG] = useState<Graph | null>(mem)
+  useEffect(() => {
+    subs.add(setG)
+    get().then(setG)
+    return () => {
+      subs.delete(setG)
+    }
+  }, [])
+  return g
+}
+
+export const statusOf = (g: Graph | null, name: string): Status => g?.concepts[slug(name)]?.status ?? 'new'
