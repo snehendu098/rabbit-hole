@@ -119,7 +119,7 @@ export default function Home() {
             <span>Gemini Nano on-device</span>
             <span>Firebase AI Logic</span>
             <span>Knowledge graph</span>
-            <span>Chrome · Android · iOS</span>
+            <span>Chrome · Web · iOS</span>
           </Item>
         </Stagger>
         <Spotlight className="border-t border-border bg-card lg:border-l lg:border-t-0">
@@ -195,7 +195,7 @@ export default function Home() {
           points={[
             ['Builds itself', 'No notes to take. Concepts and links appear as you read.'],
             ['Synced', 'Opt in to sync concept names across devices with Firestore.'],
-            ['Review on phone', 'Your new and seen concepts become review cards on Android and iOS.'],
+            ['Review on phone', 'Your new and seen concepts become review cards on iPhone.'],
             ['Ask your graph', 'Paste a GitHub issue and get a path that skips what you know.'],
           ]}
         />
