@@ -53,8 +53,8 @@ export function StatusPick({ value, onChange }: { value: Status; onChange: (s: S
 /** ON_DEVICE / IN_CLOUD badge from response.inferenceSource. */
 export function SourceBadge({ source }: { source: Source }) {
   if (source === 'on_device') return <Badge tone="live">on_device · nano</Badge>
+  if (source === 'in_cloud') return <Badge>in_cloud · gemini</Badge>
   return null // demo: nav badge says it
-  return <Badge tone="muted">demo data</Badge>
 }
 
 export type MapItem = { id: string; name: string; status: Status; center?: boolean; busy?: boolean }
