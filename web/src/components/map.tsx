@@ -9,6 +9,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState, type ReactNode } from 'react'
 import { Badge, Btn, Nav } from '@/components/ds'
 import { hasFirebase } from '@/lib/firebase'
+import type { Source } from '@/lib/ai'
 import { signInGoogle, useUser, type Edge, type Status } from '@/lib/graph'
 import { cn } from '@/lib/utils'
 
@@ -47,6 +48,13 @@ export function StatusPick({ value, onChange }: { value: Status; onChange: (s: S
       ))}
     </div>
   )
+}
+
+/** ON_DEVICE / IN_CLOUD badge from response.inferenceSource. */
+export function SourceBadge({ source }: { source: Source }) {
+  if (source === 'on_device') return <Badge tone="live">on_device · nano</Badge>
+  if (source === 'in_cloud') return <Badge>in_cloud · gemini</Badge>
+  return <Badge tone="muted">demo data</Badge>
 }
 
 export type MapItem = { id: string; name: string; status: Status; center?: boolean; busy?: boolean }
