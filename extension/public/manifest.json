@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Rabbit Hole",
+  "version": "0.1.0",
+  "description": "A learning layer that knows what you know. On-device explanations + private knowledge graph.",
+  "minimum_chrome_version": "139",
+  "permissions": ["storage", "offscreen"],
+  "background": { "service_worker": "sw.js", "type": "module" },
+  "action": { "default_popup": "popup.html", "default_title": "Rabbit Hole" },
+  "content_scripts": [
+    { "matches": ["<all_urls>"], "js": ["content.js"], "run_at": "document_idle" }
+  ],
+  "externally_connectable": {
+    "matches": ["https://*.web.app/*", "https://*.firebaseapp.com/*", "http://localhost:3000/*"]
+  }
+}
