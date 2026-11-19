@@ -1,0 +1,126 @@
+rules_version = '2';
+
+// Data model (all under users/{uid}, owner-only):
+// users/{uid}: displayName? str<=100, createdAt ts (=create time, immutable),
+//   syncEnabled bool, reviewHour? int 0-23, fcmTokens? list<=10 str
+// concepts/{slug}: name 1-120, summary<=2000, status enum, mastery 0..1,
+//   seenCount int>=0, firstSeen ts (immutable), lastSeen ts, updatedAt=now
+// edges/{from__to}: from slug, to slug, updatedAt=now
+// issues/{id}: url github<=300, title<=300, summary<=5000, files<=50,
+//   prereqs<=50, createdAt=now; no update
+// reviews/{id}: Admin SDK writes; client sets grade+reviewedAt only
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+
+    function unchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    function str(v, minLen, maxLen) {
+      return v is string && v.size() >= minLen && v.size() <= maxLen;
+    }
+
+    function isSlug(v) {
+      return v is string && v.matches('^[a-z0-9-]{1,80}$');
+    }
+
+    // list element i absent or short string
+    function strAt(l, i) {
+      return l.size() <= i || str(l[i], 1, 4096);
+    }
+
+    function isValidTokens(l) {
+      return l is list && l.size() <= 10 &&
+        strAt(l, 0) && strAt(l, 1) && strAt(l, 2) && strAt(l, 3) && strAt(l, 4) &&
+        strAt(l, 5) && strAt(l, 6) && strAt(l, 7) && strAt(l, 8) && strAt(l, 9);
+    }
+
+    function isValidUser(d) {
+      return d.keys().hasAll(['createdAt', 'syncEnabled']) &&
+        d.keys().hasOnly(['displayName', 'createdAt', 'syncEnabled', 'reviewHour', 'fcmTokens']) &&
+        d.createdAt is timestamp &&
+        d.syncEnabled is bool &&
+        (!('displayName' in d) || str(d.displayName, 0, 100)) &&
+        (!('reviewHour' in d) || (d.reviewHour is int && d.reviewHour >= 0 && d.reviewHour <= 23)) &&
+        (!('fcmTokens' in d) || isValidTokens(d.fcmTokens));
+    }
+
+    function isValidConcept(d) {
+      return d.keys().hasAll(['name', 'summary', 'status', 'mastery', 'seenCount', 'firstSeen', 'lastSeen', 'updatedAt']) &&
+        d.keys().hasOnly(['name', 'summary', 'status', 'mastery', 'seenCount', 'firstSeen', 'lastSeen', 'updatedAt']) &&
+        str(d.name, 1, 120) &&
+        str(d.summary, 0, 2000) &&
+        d.status in ['known', 'seen', 'new'] &&
+        d.mastery is number && d.mastery >= 0 && d.mastery <= 1 &&
+        d.seenCount is int && d.seenCount >= 0 &&
+        d.firstSeen is timestamp &&
+        d.lastSeen is timestamp &&
+        d.updatedAt == request.time;
+    }
+
+    function isValidEdge(d, edgeId) {
+      return d.keys().hasAll(['from', 'to', 'updatedAt']) &&
+        d.keys().hasOnly(['from', 'to', 'updatedAt']) &&
+        isSlug(d.from) && isSlug(d.to) &&
+        edgeId == d.from + '__' + d.to &&
+        d.updatedAt == request.time;
+    }
+
+    // ponytail: list items not type-checked (no loops); 50-item cap bounds size
+    function isValidIssue(d) {
+      return d.keys().hasAll(['url', 'title', 'summary', 'files', 'prereqs', 'createdAt']) &&
+        d.keys().hasOnly(['url', 'title', 'summary', 'files', 'prereqs', 'createdAt']) &&
+        str(d.url, 20, 300) && d.url.matches('^https://github[.]com/.*') &&
+        str(d.title, 0, 300) &&
+        str(d.summary, 0, 5000) &&
+        d.files is list && d.files.size() <= 50 &&
+        d.prereqs is list && d.prereqs.size() <= 50 &&
+        d.createdAt == request.time;
+    }
+
+    function isValidGrade(d) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['grade', 'reviewedAt']) &&
+        d.grade is int && d.grade >= 0 && d.grade <= 5 &&
+        d.reviewedAt == request.time;
+    }
+
+    match /users/{uid} {
+      allow read, delete: if isOwner(uid);
+      allow create: if isOwner(uid) && isValidUser(request.resource.data) &&
+        request.resource.data.createdAt == request.time;
+      allow update: if isOwner(uid) && isValidUser(request.resource.data) &&
+        unchanged(['createdAt']);
+
+      match /concepts/{slug} {
+        allow read, delete: if isOwner(uid);
+        allow create: if isOwner(uid) && isSlug(slug) && isValidConcept(request.resource.data);
+        allow update: if isOwner(uid) && isSlug(slug) && isValidConcept(request.resource.data) &&
+          unchanged(['firstSeen']);
+      }
+
+      match /edges/{edgeId} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid) && isValidEdge(request.resource.data, edgeId);
+      }
+
+      match /issues/{issueId} {
+        allow read, delete: if isOwner(uid);
+        allow create: if isOwner(uid) && isValidIssue(request.resource.data);
+      }
+
+      match /reviews/{id} {
+        allow read: if isOwner(uid);
+        allow update: if isOwner(uid) && isValidGrade(request.resource.data);
+      }
+    }
+  }
+}
